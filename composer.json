@@ -1,0 +1,26 @@
+{
+    "name": "magmacore/magma-admin",
+    "description": "PHP and Twig admin backend for MagmaCore__ framework",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "TheCodingWorkshop",
+            "email": "riccodingworkshop@gmail.com"
+        }
+    ],
+    "minimum-stability": "alpha",
+    "require": {
+        "magmacore/magmacore": "^1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "MagmaAdmin\\" : "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MagmaAdmin\\Tests\\" : "tests/"
+        }
+    }
+}
