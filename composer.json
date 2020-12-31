@@ -1,8 +1,17 @@
 {
     "name": "magmacore/magma-admin",
     "description": "PHP and Twig admin backend for MagmaCore__ framework",
+    "keywords": ["php", "framework", "magmacore", "lavastudio", "magma-admin"],
     "type": "library",
     "license": "MIT",
+    "time": "2020-12-31",
+    "readme": "https://github.com/TheCodingWorkshop/MagmaAdmin/blob/main/README.md",
+    "support": {
+        "email": "support@lavastudio.co.uk",
+        "source": "https://github.com/TheCodingWorkshop/MagmaAdmin.git",
+        "wiki": "https://github.com/TheCodingWorkshop/MagmaAdmin/wiki",
+        "issues": "https://github.com/TheCodingWorkshop/MagmaAdmin/issues"
+    },
     "authors": [
         {
             "name": "TheCodingWorkshop",
@@ -22,5 +31,9 @@
         "psr-4": {
             "MagmaAdmin\\Tests\\" : "tests/"
         }
+    },
+    "suggest": {
+        "magma/magma-skeleton": "The base application for magmacore framework"
     }
+
 }
