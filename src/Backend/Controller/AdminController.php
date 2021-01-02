@@ -7,12 +7,15 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 declare(strict_types=1);
 
 namespace MagmaAdmin\Backend\Controller;
 
 use MagmaCore\Auth\Controller\AuthenticatedController;
 use MagmaCore\Auth\Authorized;
+use MagmaCore\Utility\Sanitizer;
+use MagmaCore\Utility\Yaml;
 
 class AdminController extends AuthenticatedController
 {
@@ -55,7 +58,7 @@ class AdminController extends AuthenticatedController
         parent::before(); /* simple ineriting the loginRequired method */
         /* But this the admin section we are going to be super strict with access */
         $authorized = Authorized::grantedUser();
-        if (!empty($authorized) && $authorized !=null) {
+        if (!empty($authorized) && $authorized != null) {
             if (!$authorized->hasPrivilege('all')) {
                 header('HTTP/1.1 403 Forbidden');
                 $this->flashMessage('You are not allowed to access that resource.', $this->flashWarning());
@@ -71,6 +74,145 @@ class AdminController extends AuthenticatedController
      * @return void
      */
     protected function after()
-    {}
+    {
+    }
 
+    private function tableOptions(string $autoController): array
+    {
+        $cleanData = Sanitizer::clean($_POST);
+        $config = Yaml::file('controller')[$autoController];
+
+        /* records per page */
+        $recordsPerPage = (isset($cleanData['records_per_page']) ? $cleanData['records_per_page'] : $config['records_per_page']);
+        /* column visibility */
+        $columnVisible = (isset($cleanData['columns_visible']) ? $cleanData['columns_visible'] : []);
+        /* filter by */
+        $filterBy = (isset($cleanData['filter_by']) ? $cleanData['filter_by'] : $config['filter_by']);
+
+        return [
+            $recordsPerPage,
+            $columnVisible,
+            $filterBy
+        ];
+    }
+
+    /**
+     * Checks whether the entity settings is being called from the correct 
+     * controller and return true. returns false otherwise
+     *
+     * @param string $autoController
+     * @return boolean
+     */
+    private function isControllerValid(string $autoController): bool
+    {
+        if (is_array($this->routeParams) && in_array($autoController, $this->routeParams, true)) {
+            if (isset($this->routeParams['controller']) && $this->routeParams['controller'] == $autoController) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns the current object controller as a string value
+     *
+     * @param string $controller
+     * @return string
+     */
+    private function getCurrentController(string $controller): string
+    {
+        return ($controller != null) ? $controller : $this->thisRouteController();
+    }
+
+    /**
+     * Allows each entity to be able to be customizable in terms of settings the amount
+     * of table data to be displayd per page and change the search filter. These options 
+     * can be customize from each entity page.
+     *
+     * @param string|null $controller
+     * @return boolean
+     */
+    public function tableSettingsInit(?string $controller = null): bool
+    {
+        $autoController = $this->getCurrentController($controller);
+        $this->channel = $autoController . 'Settings';
+
+        if ($this->isControllerValid($autoController)) {
+            list(
+                $recordsPerPage,
+                $columnVisible,
+                $filterBy
+            ) = $this->tableOptions($autoController);
+
+            $fileData = [
+                "id" => $autoController,
+                "records_per_page" => $recordsPerPage,
+                "columns_visible" => $columnVisible,
+                "filter_by" => $filterBy
+            ];
+
+            $this->flatDb()
+                ->flatDatabase()
+                ->insert()
+                ->in($this->channel)
+                ->set($fileData)
+                ->execute();
+            return true;
+        }
+        return false;
+    }
+
+    public function tableSettingsUpdateInit(?string $controller = null)
+    {
+        $autoController = $this->getCurrentController($controller);
+        if ($this->isControllerValid($autoController)) {
+            list(
+                $recordsPerPage,
+                $columnVisible,
+                $filterBy
+            ) = $this->tableOptions($autoController);
+
+            $fileData = [
+                "id" => $autoController,
+                "records_per_page" => $recordsPerPage,
+                "columns_visible" => $columnVisible,
+                "filter_by" => $filterBy
+            ];
+            $this->flatDb()
+                ->flatDatabase()
+                ->update()
+                ->in($this->channel)
+                ->set($fileData)
+                ->execute();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * fetch a table settings by specifying the name of the settings we want to get 
+     * the value for. ie 'records_per_page, columns_visible, filter_by etc...
+     * 
+     * @param string|null $controller
+     * @return void
+     */
+    public function tableGetSettings(string $name, ?string $controller = null)
+    {
+        $autoController = $this->getCurrentController($controller);
+        $options = $this
+        ->flatDb()
+        ->flatDatabase()
+        ->read()
+        ->in($this->channel)
+        ->where("id", "==", $autoController)
+        ->get();
+
+        $settings = [];
+        foreach ($options as $option) {
+            $settings = $option;
+        }
+        if (isset($settings[$name]) && $settings[$name] !='') {
+            return $settings[$name];
+        }
+    }
 }
