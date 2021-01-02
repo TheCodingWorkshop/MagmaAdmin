@@ -82,8 +82,6 @@ class UserController extends AdminController
     protected function indexAction()
     { 
         $args = Yaml::file('controller')[$this->thisRouteController()];
-        $args['records_per_page'] = 10;
-        $args['filter_by'] = '';
 
         $repository = $this
         ->repository

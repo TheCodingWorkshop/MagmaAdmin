@@ -56,7 +56,6 @@ class AdminController extends AuthenticatedController
         /* But this the admin section we are going to be super strict with access */
         $authorized = Authorized::grantedUser();
         if (!empty($authorized) && $authorized !=null) {
-            $authorized = (object)$authorized;
             if (!$authorized->hasPrivilege('all')) {
                 header('HTTP/1.1 403 Forbidden');
                 $this->flashMessage('You are not allowed to access that resource.', $this->flashWarning());
