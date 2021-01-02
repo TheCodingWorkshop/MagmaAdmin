@@ -162,6 +162,12 @@ class AdminController extends AuthenticatedController
         return false;
     }
 
+    /**
+     * Method which updates the entity page settings
+     *
+     * @param string|null $controller
+     * @return void
+     */
     public function tableSettingsUpdateInit(?string $controller = null)
     {
         $autoController = $this->getCurrentController($controller);

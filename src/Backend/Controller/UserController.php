@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace MagmaAdmin\Backend\Controller;
 
 use MagmaAdmin\Backend\Controller\AdminController;
+use MagmaAdmin\Backend\Entity\UserEntity;
 use MagmaCore\Utility\Yaml;
 use LoaderError;
 use RuntimeError;
@@ -82,6 +83,8 @@ class UserController extends AdminController
     protected function indexAction()
     { 
         $args = Yaml::file('controller')[$this->thisRouteController()];
+        $args['records_per_page'] = $this->tablegetSettings('records_per_page');
+        $args['filter_by'] = $this->tablegetSettings('filter_by');
 
         $repository = $this
         ->repository
@@ -91,12 +94,51 @@ class UserController extends AdminController
         $this->render(
             'admin/user/index.html.twig',
             [
-                "table" => $tableData
-            ]
+                "controller" => $this->thisRouteController(),
+                "table" => $tableData,
+                "pagination" => $this->tableGrid->pagination(),
+                "total_records" => $this->tableGrid->totalRecords(),
+                "columns" => $this->tableGrid->getColumns(),
+                "results" => $repository,
+                "search_query" => $this
+                    ->request
+                    ->handler()
+                    ->query
+                    ->getAlnum($this->tableGetSettings('filter_by')),
+                "help_block" => ""
+            ] 
         );
     }
 
     public function newAction()
-    {}
+    {
+        if (isset($this->form)) {
+            if ($this->form->canHandleRequest() && $this->form->isSubmittable('new-' . $this->thisRouteController())) {
+                if ($this->form->csrfValidate()) {
+
+                    $submit = $this
+                    ->repository
+                    ->getRepo()
+                    ->validateRepository((new UserEntity($this->form->getData()))
+                    ->persistAfterValidation();
+
+                    if (!$submit) {
+                        $this->flashMessage($this->locale('new_added'));
+                        $this->redirect('/admin/user/new');
+                    } else {
+                        $this->flashMessage($this->locale('fail_submission'), $this->flashWarning());
+                        $this->redirect('/admin/user/new');    
+                    }
+
+                }
+            }
+        }
+        $this->render(
+            "/admin/user/new.html.twig",
+            [
+                "form" => $this->formUser->createForm('/admin/user/new')
+            ]
+        );
+    }
 
 }
